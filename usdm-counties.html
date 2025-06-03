@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Leaflet + DuckDB-Wasm GeoParquet</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <style>
+    html, body, #map { height: 100%; margin: 0; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script type="module">
+    import * as L from "https://esm.sh/leaflet@1.9.4";
+    import * as duckdb from "https://esm.sh/@duckdb/duckdb-wasm@1.29.0";
+
+    const db = await initDuckDB();
+    await loadAndRenderMap(db, "usdm/data/parquet/USDM_2010-08-03.parquet");
+
+    async function initDuckDB() {
+      const bundles = duckdb.getJsDelivrBundles();
+      const bundle = await duckdb.selectBundle(bundles);
+      const worker_url = URL.createObjectURL(
+        new Blob([`importScripts("${bundle.mainWorker}");`], { type: "text/javascript" })
+      );
+      const worker = new Worker(worker_url);
+      const logger = new duckdb.ConsoleLogger();
+      const db = new duckdb.AsyncDuckDB(logger, worker);
+      await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+      URL.revokeObjectURL(worker_url);
+      return db;
+    }
+
+    async function loadAndRenderMap(db, parquetFile) {
+      // Load the file (served from same folder)
+      const response = await fetch(parquetFile);
+      const buffer = await response.arrayBuffer();
+      await db.registerFileBuffer(parquetFile, new Uint8Array(buffer));
+
+      const conn = await db.connect();
+      const result = await conn.query(`
+        SELECT ST_AsGeoJSON(geometry) AS geojson, usdm_class
+        FROM '${parquetFile}'
+        WHERE geometry IS NOT NULL
+        LIMIT 500
+      `);
+      await conn.close();
+
+      // Convert DuckDB result to GeoJSON features
+      const features = result.toArray().map(row => ({
+        type: "Feature",
+        geometry: JSON.parse(row.geojson),
+        properties: { usdm_class: row.usdm_class }
+      }));
+
+      const geojsonLayer = L.geoJSON({ type: "FeatureCollection", features }, {
+        style: f => ({
+          color: "#333",
+          fillColor: getColor(f.properties.usdm_class),
+          fillOpacity: 0.6,
+          weight: 0.5
+        }),
+        onEachFeature: (feature, layer) => {
+          layer.bindPopup(`<b>Drought Class:</b> ${feature.properties.usdm_class}`);
+        }
+      });
+
+      const map = L.map("map").setView([39.8283, -98.5795], 4);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
+
+      geojsonLayer.addTo(map);
+      map.fitBounds(geojsonLayer.getBounds());
+    }
+
+    function getColor(cls) {
+      return {
+        "None": "#f7fcf5",
+        "D0": "#ffffcc",
+        "D1": "#fed976",
+        "D2": "#fd8d3c",
+        "D3": "#e31a1c",
+        "D4": "#800026"
+      }[cls] || "#999";
+    }
+  </script>
+</body>
+</html>
