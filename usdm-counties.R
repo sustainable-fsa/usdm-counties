@@ -189,12 +189,38 @@ out <-
     )
   )
 
+## Create directory listing infrastructure
+generate_tree_flat <- function(
+    data_dir = "data", 
+    output_file = file.path("manifest.json")) {
+  
+  all_entries <- 
+    fs::dir_ls(data_dir, recurse = TRUE, all = TRUE, type = "file") |>
+    stringr::str_subset("(^|/)[.][^/]+", negate = TRUE)
+  
+  entries <- list()
+  
+  for (entry in all_entries) {
+    rel_path <- fs::path_rel(entry, start = ".")
+    info <- fs::file_info(entry)
+    is_dir <- fs::is_dir(entry)
+    entry_data <- list(
+      path = as.character(rel_path),
+      size = if (is_dir) "-" else info$size,
+      mtime = if (is_dir) "-" else format(info$modification_time, "%Y-%Om-%d %H:%M:%S")
+    )
+    entries[[length(entries) + 1]] <- entry_data
+  }
+  
+  # Sort by path
+  entries <- entries[order(sapply(entries, function(x) x$path))]
+  
+  jsonlite::write_json(entries, output_file, pretty = TRUE, auto_unbox = TRUE)
+  message("✅ Wrote ", length(entries), " entries to ", output_file)
+}
 
-# outfile %>%
-#   arrow::read_parquet() %>%
-#   dplyr::mutate(
-#     usdm_class = 
-#       factor(usdm_class,
-#              levels = c("None", paste0("D", 0:4)),
-#              ordered = TRUE)
-#   )
+# Generate the flat index
+generate_tree_flat()
+
+# Knit the readme
+rmarkdown::render("README.Rmd")

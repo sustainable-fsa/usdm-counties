@@ -6,7 +6,7 @@ on:
   #   - cron: '49 12 * * THU'
 
 name: update
-run-name: Update the USDM Archive with the latest data! 🚀
+run-name: Update the USDM County Aggregation Archive
 
 permissions: write-all
 
