@@ -109,7 +109,6 @@ Key R packages used:
 - `tidyverse`
 - `curl`
 
-
 The script installs all required packages using the [`pak`](https://pak.r-lib.org) package.
 
 ---
