@@ -177,7 +177,7 @@ library(rmapshaper) # For innerlines function
 ## Get latest USDM data
 latest <-
   jsonlite::fromJSON(
-    "https://climate-smart-usda.github.io/usdm-counties/manifest.json"
+    "manifest.json"
   )$path |>
   stringr::str_subset("parquet") |>
   max()
@@ -190,20 +190,20 @@ date <-
 
 # Get the highest (worst) drought class in each county
 usdm <-
-  file.path("https://climate-smart-usda.github.io", "usdm-counties", latest) |>
+  latest |>
   arrow::read_parquet() |>
   dplyr::group_by(STATEFP, COUNTYFP) |>
   dplyr::filter(usdm_class == max(usdm_class))
 
 counties <- 
   tigris::counties(cb = TRUE, 
-                 resolution = "5m",
-                 progress_bar = FALSE) |>
+                   resolution = "5m",
+                   progress_bar = FALSE) |>
   dplyr::filter(
     !(STATE_NAME %in% c("Guam", 
-                  "American Samoa", 
-                  "United States Virgin Islands", 
-                  "Commonwealth of the Northern Mariana Islands"))
+                        "American Samoa", 
+                        "United States Virgin Islands", 
+                        "Commonwealth of the Northern Mariana Islands"))
   ) |>
   sf::st_cast("POLYGON", warn = FALSE, do_split = TRUE) |>
   tigris::shift_geometry()
@@ -225,10 +225,10 @@ ggplot(counties) +
           fill = NA,
           color = "white",
           linewidth = 0.1) +
-    geom_sf(data = counties |>
-              dplyr::group_by(STATEFP) |>
-              dplyr::summarise() |>
-              rmapshaper::ms_innerlines(),
+  geom_sf(data = counties |>
+            dplyr::group_by(STATEFP) |>
+            dplyr::summarise() |>
+            rmapshaper::ms_innerlines(),
           fill = NA,
           color = "white",
           linewidth = 0.2) +
