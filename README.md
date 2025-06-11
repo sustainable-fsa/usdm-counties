@@ -1,19 +1,19 @@
-
+sustainable-fsa
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 [![Static
-Badge](https://img.shields.io/badge/Repo-climate--smart--usda%2Fusdm-magenta?style=flat)](https://github.com/climate-smart-usda/usdm-counties/)
+Badge](https://img.shields.io/badge/Repo-sustainable--fsa%2Fusdm-magenta?style=flat)](https://github.com/sustainable-fsa/usdm-counties/)
 ![Last
-Update](https://img.shields.io/github/last-commit/climate-smart-usda/usdm-counties?style=flat)
+Update](https://img.shields.io/github/last-commit/sustainable-fsa/usdm-counties?style=flat)
 ![Repo
-Size](https://img.shields.io/github/repo-size/climate-smart-usda/usdm-counties?style=flat)
+Size](https://img.shields.io/github/repo-size/sustainable-fsa/usdm-counties?style=flat)
 
 This repository provides weekly US Drought Monitor (USDM) data
 aggregated to US Census county boundaries. This dataset facilitates
 county-level analysis of drought conditions, supporting research,
 policy-making, and climate resilience planning.
 
-<a href="https://climate-smart-usda.github.io/usdm-counties/manifest.html" target="_blank">📂
+<a href="https://sustainable-fsa.github.io/usdm-counties/manifest.html" target="_blank">📂
 View the US Drought Monitor county archive listing here.</a>
 
 The goal of this repository is to aggregate county-level US Drought
@@ -84,7 +84,7 @@ localized analysis and decision-making.**
 ## Data Sources
 
 - **USDM Polygons**: Weekly `.parquet` files from
-  [climate-smart-usda/usdm](https://github.com/climate-smart-usda/usdm)
+  [sustainable-fsa/usdm](https://github.com/sustainable-fsa/usdm)
 - **U.S. Census County Boundaries**: Downloaded from the U.S. Census
   TIGER/Line archive for 2000–2024.
 - For each USDM date, the **county boundary vintage used is the most
@@ -256,7 +256,7 @@ ggplot(counties) +
 > US Drought Monitor authors. *US Drought Monitor Weekly Maps*. Data
 > curated and archived by R. Kyle Bocinsky, Montana Climate Office.
 > Accessed via GitHub archive, YYYY.
-> <https://climate-smart-usda.github.io/usdm/>
+> <https://sustainable-fsa.github.io/usdm/>
 
 **Acknowledgments**:
 
@@ -287,7 +287,7 @@ visit <https://droughtmonitor.unl.edu>.
 
 This project is part of:
 
-**[*Enhancing Climate-smart Disaster Relief in FSA
+**[*Enhancing Sustainable Disaster Relief in FSA
 Programs*](https://www.ars.usda.gov/research/project/?accnNo=444612)**  
 Supported by USDA OCE/OEEP and USDA Climate Hubs  
 Prepared by the [Montana Climate Office](https://climate.umt.edu)

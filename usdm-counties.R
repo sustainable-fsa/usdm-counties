@@ -143,7 +143,7 @@ out <-
   dplyr::mutate(
     Year = lubridate::year(Date),
     USDM = 
-      file.path("https://climate-smart-usda.github.io/usdm", 
+      file.path("https://sustainable-fsa.github.io/usdm", 
                 "usdm", "data", "parquet", 
                 paste0("USDM_",Date,".parquet")),
     outfile = file.path("data", "usdm", 
