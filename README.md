@@ -250,8 +250,8 @@ ggplot(counties) +
   theme_void()
 ```
 
-    ## Warning in class(input) == c("sf", "tbl_df", "tbl", "data.frame"): longer object length is not a
-    ## multiple of shorter object length
+    ## Warning in class(input) == c("sf", "tbl_df", "tbl", "data.frame"): longer
+    ## object length is not a multiple of shorter object length
 
 <img src="./example-1.png" alt="" style="display: block; margin: auto;" />
 
