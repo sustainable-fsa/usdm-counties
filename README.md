@@ -95,7 +95,7 @@ localized analysis and decision-making.**
   - USDM maps from 2011 use **2010 vintage counties**
   - USDM maps from 2014 use **2013 vintage counties**
   - …
-  - USDM maps from 2024 use **2023 counties** (the latest available)
+  - USDM maps from 2026 use **2025 counties** (the latest available)
 
 All boundaries are reprojected to EPSG:4326, geometrically validated,
 and saved in `.parquet` format.
