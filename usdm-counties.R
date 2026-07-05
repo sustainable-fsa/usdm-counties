@@ -31,10 +31,17 @@ library(arrow)
 library(furrr)
 library(future.mirai)
 
+source("R/s3-archive.R")
+s3_preflight()
+s3_bucket_name <- Sys.getenv("S3_BUCKET", unset = "sustainable-fsa")
+s3_prefix      <- Sys.getenv("S3_PREFIX", unset = "usdm-counties")
+## Pull prior archive state so incremental guards see existing outputs
+s3_pull(s3_bucket_name, paste0(s3_prefix, "/data"), "data")
+
 sf::sf_use_s2(TRUE)
 
 dir.create(
-  file.path("data","census","raw"),
+  file.path("data-raw","census"),
   recursive = TRUE,
   showWarnings = FALSE
 )
@@ -79,8 +86,8 @@ counties <-
   {
     magrittr::set_names(
       curl::multi_download(urls = .,
-                           destfiles = 
-                             file.path("data","census","raw",basename(.)),
+                           destfiles =
+                             file.path("data-raw","census",basename(.)),
                            resume = TRUE)$destfile,
       names(.))
   } %>%
@@ -138,7 +145,7 @@ counties <-
   tidyr::fill(Counties, .direction = "up")
 
 usdm_get_dates <-
-  function(as_of = lubridate::today()){
+  function(as_of = lubridate::today("America/Denver")){
     as_of %<>%
       lubridate::as_date()
     
@@ -156,11 +163,10 @@ usdm_get_dates() %>%
   tibble::tibble(Date = .) %>%
   dplyr::mutate(
     Year = lubridate::year(Date),
-    USDM = 
+    USDM =
       file.path(
-        "https://sustainable-fsa.com/usdm",
-        # "../usdm",
-        "usdm", "data", "parquet", 
+        "https://data.sustainable-fsa.com/usdm",
+        "data", "parquet",
         paste0("USDM_",Date,".parquet")),
     outfile = file.path("data", "usdm", 
                         paste0("USDM_",Date,".parquet"))
@@ -269,5 +275,20 @@ generate_tree_flat <- function(
 # Generate the flat index
 generate_tree_flat()
 
-# Knit the readme
-rmarkdown::render("README.Rmd")
+## ---- Publish to S3 ---------------------------------------------------
+s3_push(s3_bucket_name, paste0(s3_prefix, "/data"), "data", delete = TRUE,
+        excludes = c("*.DS_Store", ".Rproj.user/*", ".Rhistory",
+                     "_manifest.txt", "census/raw/*"))
+s3_put(s3_bucket_name, paste0(s3_prefix, "/usdm-counties.parquet"),
+       "usdm-counties.parquet",
+       content_type = "application/vnd.apache.parquet",
+       cache_control = "max-age=3600")
+s3_put(s3_bucket_name, paste0(s3_prefix, "/manifest.json"), "manifest.json",
+       content_type = "application/json",
+       cache_control = "max-age=3600")
+s3_verify(s3_bucket_name, paste0(s3_prefix, "/data"), "data",
+          allow_extra = character(0))
+s3_write_manifest(s3_bucket_name, s3_prefix)
+cf_invalidate(c(paste0("/", s3_prefix, "/usdm-counties.parquet"),
+                paste0("/", s3_prefix, "/manifest.json"),
+                paste0("/", s3_prefix, "/_manifest.txt")))
