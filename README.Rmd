@@ -13,7 +13,7 @@ editor_options:
 
 This repository provides weekly US Drought Monitor (USDM) data aggregated to US Census county boundaries. This dataset facilitates county-level analysis of drought conditions, supporting research, policy-making, and climate resilience planning.
 
-<a href="https://sustainable-fsa.com/usdm-counties/manifest.html" target="_blank">📂 View the US Drought Monitor county archive listing here.</a>
+<a href="https://data.sustainable-fsa.com/#/usdm-counties/" target="_blank">📂 View the US Drought Monitor county archive listing here.</a>
 
 The goal of this repository is to aggregate county-level US Drought Monitor data in a consistent and reproducible way, using authoritative US Census county boundaries. Given the regulatory role played by the interaction between USDM and county boundaries (e.g., [7 CFR 1416.205](https://www.ecfr.gov/current/title-7/section-1416.205), [7 CFR 759.5](https://www.ecfr.gov/current/title-7/section-759.5)), it is essential that this work be authoritative, well-documented, and available in a persistent, and findable archive established by a Federal agency. This work seeks to create a framework for such an archive, with the ultimate goal of conforming with the *Foundations for Evidence-Based Policymaking Act of 2018* ("Evidence Act", [Public Law 115–435](https://www.congress.gov/115/statute/STATUTE-132/STATUTE-132-Pg5529.pdf)), the *Geospatial Data Act of 2018* (enacted as part of [Public Law 115–254](https://www.congress.gov/115/statute/STATUTE-132/STATUTE-132-Pg3186.pdf)), and [Executive Order 14303, *Restoring Gold Standard Science*](https://www.federalregister.gov/documents/2025/05/29/2025-09802/restoring-gold-standard-science).
 

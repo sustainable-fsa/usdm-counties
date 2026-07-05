@@ -13,7 +13,7 @@ aggregated to US Census county boundaries. This dataset facilitates
 county-level analysis of drought conditions, supporting research,
 policy-making, and climate resilience planning.
 
-<a href="https://sustainable-fsa.com/usdm-counties/manifest.html" target="_blank">📂
+<a href="https://data.sustainable-fsa.com/#/usdm-counties/" target="_blank">📂
 View the US Drought Monitor county archive listing here.</a>
 
 The goal of this repository is to aggregate county-level US Drought
