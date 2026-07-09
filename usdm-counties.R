@@ -305,4 +305,6 @@ cf_invalidate(c(paste0("/", s3_prefix, "/usdm-counties.parquet"),
 # ---- Render the README ----
 # Regenerates README.md and the example map from the freshly updated
 # archive; the workflow commits these (and only these) back to git.
+cf_wait_manifest("https://data.sustainable-fsa.com/usdm-counties/manifest.json",
+                 "manifest.json")
 rmarkdown::render("README.Rmd")
