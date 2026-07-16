@@ -201,6 +201,8 @@ ggplot(counties) +
   theme_void()
 ```
 
+Latest USDM map date: **`r format(date, "%B %d, %Y")`**
+
 ---
 
 ## 📝 Citation
