@@ -255,6 +255,8 @@ ggplot(counties) +
 
 <img src="./example-1.png" alt="" style="display: block; margin: auto;" />
 
+Latest USDM map date: **July 14, 2026**
+
 ------------------------------------------------------------------------
 
 ## 📝 Citation
