@@ -121,16 +121,20 @@ The analysis pipeline is fully contained in
 - Uses `pak::pak()` to ensure fresh, source-built installs of critical
   geospatial packages.
 
-2.  **Download county boundary shapefiles** for each year (2000–2024)
-    directly from US Census and store in `data/census/raw`.
+2.  **Fetch the vintage-matched county boundaries** from the
+    [`census-counties`](https://github.com/sustainable-fsa/census-counties)
+    archive, which owns the TIGER/Line downloads, the per-vintage schema
+    normalization and the validity repair. Vintages are discovered from
+    the archive rather than hardcoded, so a new TIGER release needs no
+    edit here.
 
-3.  **Convert each shapefile to (Geo)Parquet**:
+3.  **Cache each vintage locally** under
+    `data-raw/census/{year}-counties.parquet`:
 
-- Extract and clean up attributes (`STATEFP`, `COUNTYFP`, `NAME`,
-  `NAMELSAD`)
-- Encode using UTF-8, fix geometries, cast to MULTIPOLYGON, and
-  calculate area
-- Output is saved to `data/census/parquet/{year}-counties.parquet`
+- Join the state name and reproject to EPSG:4326 once, so every parallel
+  worker sees the schema the determinations are written against
+- Cached rather than read per task because the intersections run in
+  parallel across ~1,400 weeks
 
 4.  **Match USDM dates with appropriate county vintage**:
 
