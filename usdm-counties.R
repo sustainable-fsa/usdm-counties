@@ -35,19 +35,34 @@ source("R/s3-archive.R")
 s3_preflight()
 s3_bucket_name <- Sys.getenv("S3_BUCKET", unset = "sustainable-fsa")
 s3_prefix      <- Sys.getenv("S3_PREFIX", unset = "usdm-counties")
-## Pull prior archive state so incremental guards see existing outputs
-s3_pull(s3_bucket_name, paste0(s3_prefix, "/data"), "data")
+## Pull prior archive state so incremental guards see existing outputs. Only
+## the weekly determinations need it — the guard below is !file.exists() over
+## data/usdm — and pulling all of data/ would drag down the retired county
+## copy described under `counties`, then hand it straight back to S3.
+s3_pull(s3_bucket_name, paste0(s3_prefix, "/data/usdm"), "data/usdm")
 
 sf::sf_use_s2(TRUE)
 
-dir.create(
-  file.path("data-raw","census"),
-  recursive = TRUE,
-  showWarnings = FALSE
-)
+## The county boundaries come from the census-counties archive, which owns the
+## TIGER/Line downloads, the per-vintage schema normalization and the validity
+## repair. This repo used to build them itself and publish a second copy under
+## its own prefix; 1.2 GB of the same boundaries in two archives is one copy
+## too many, and the weekly determinations below are the only reason this repo
+## ever needed them.
+##
+## They are cached under data-raw/ rather than read from the CDN per task: the
+## intersections run in parallel across ~1,400 weeks and every worker reads its
+## week's vintage. State name and EPSG:4326 are applied once, here, so each
+## worker sees exactly the schema the determinations are written against.
+##
+## Vintages are discovered from the archive rather than hardcoded, so a new
+## TIGER release flows through without an edit here.
+CENSUS_COUNTIES <-
+  Sys.getenv("CENSUS_COUNTIES_URL",
+             unset = "https://data.sustainable-fsa.com/census-counties")
 
 dir.create(
-  file.path("data","census","parquet"),
+  file.path("data-raw","census"),
   recursive = TRUE,
   showWarnings = FALSE
 )
@@ -66,64 +81,25 @@ states <-
   dplyr::arrange(STATEFP)
 
 counties <-
-  c(
-    `2000` = 
-      "https://www2.census.gov/geo/tiger/TIGER2010/COUNTY/2000/tl_2010_us_county00.zip",
-    `2009` = 
-      "https://www2.census.gov/geo/tiger/TIGER2009/tl_2009_us_county.zip",
-    `2010` = 
-      "https://www2.census.gov/geo/tiger/TIGER2010/COUNTY/2010/tl_2010_us_county10.zip",
-    2011:2025 %>%
-      magrittr::set_names(.,.) %>%
-      purrr::map_chr(
-        \(x){
-          paste0(
-            "https://www2.census.gov/geo/tiger/TIGER",x,"/COUNTY/tl_",x,"_us_county.zip"
-          )
-        }
-      )
+  c(2000, 2009, 2010, 2011:(lubridate::year(lubridate::today()) + 1)) %>%
+  magrittr::set_names(., .) %>%
+  purrr::map_chr(
+    \(x){
+      file.path(CENSUS_COUNTIES, "data", "parquet",
+                paste0(x, "-counties.parquet"))
+    }
   ) %>%
-  {
-    magrittr::set_names(
-      curl::multi_download(urls = .,
-                           destfiles =
-                             file.path("data-raw","census",basename(.)),
-                           resume = TRUE)$destfile,
-      names(.))
-  } %>%
+  .[purrr::map_lgl(., url_exists)] %>%
   purrr::imap_chr(\(x, year){
     outfile <- 
-      file.path("data","census","parquet", paste0(year,"-counties.parquet"))
+      file.path("data-raw","census", paste0(year,"-counties.parquet"))
     
     if(!file.exists(outfile))
       x %>%
-      file.path("/vsizip", .) %>%
       sf::read_sf() %>%
-      dplyr::select(
-        STATEFP = dplyr::starts_with("STATEFP"),
-        COUNTYFP = dplyr::starts_with("COUNTYFP"),
-        County = dplyr::starts_with("NAME") & !dplyr::starts_with("NAMELSAD"),
-        `CountyLSAD` = dplyr::starts_with("NAMELSAD")
-      ) %>%
-      dplyr::mutate(
-        County = iconv(County, from = "latin1", to = "UTF-8"),
-        `CountyLSAD` = iconv(`CountyLSAD`, from = "latin1", to  = "UTF-8")
-      ) %>%
-      sf::st_cast("MULTIPOLYGON") %>%
-      sf::st_cast("POLYGON", warn = FALSE, do_split = TRUE) %>%
-      sf::st_make_valid() %T>%
-      {suppressMessages(sf::sf_use_s2(FALSE))} %>%
-      sf::st_make_valid() %T>%
-      {suppressMessages(sf::sf_use_s2(TRUE))} %>%
-      # Group by class and generate multipolygons
-      dplyr::group_by(STATEFP, COUNTYFP, County, `CountyLSAD`) %>%
-      dplyr::summarise(.groups = "drop",
-                       is_coverage = TRUE) %>%
-      sf::st_cast("MULTIPOLYGON", warn = FALSE) %>%
       sf::st_transform("EPSG:4326") %>%
       dplyr::left_join(states,
                        by = dplyr::join_by(STATEFP)) %>%
-      dplyr::mutate(Area = sf::st_area(geometry)) %>%
       dplyr::select(STATEFP, State, COUNTYFP, County, `CountyLSAD`, Area) %>%
       sf::write_sf(
         outfile,
@@ -403,9 +379,11 @@ generate_tree_flat <- function(
 generate_tree_flat()
 
 ## ---- Publish to S3 ---------------------------------------------------
+## delete = TRUE is an exact mirror, so the first run after the county
+## boundaries moved to census-counties retires data/census/ from this prefix.
 s3_push(s3_bucket_name, paste0(s3_prefix, "/data"), "data", delete = TRUE,
         excludes = c("*.DS_Store", ".Rproj.user/*", ".Rhistory",
-                     "_manifest.txt", "census/raw/*"))
+                     "_manifest.txt"))
 s3_put(s3_bucket_name, paste0(s3_prefix, "/usdm-counties.parquet"),
        "usdm-counties.parquet",
        content_type = "application/vnd.apache.parquet",
